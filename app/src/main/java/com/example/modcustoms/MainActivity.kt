@@ -256,7 +256,6 @@ fun CategoriaItem(nombre: String, imagenId: Int) {
     }
 }
 
-
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Home : Screen("home", "Inicio", Icons.Default.Home)
     object Perfil : Screen("perfil", "Perfil", Icons.Default.Person)
@@ -270,6 +269,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 @Composable fun PantallaTuAuto() { Text("Detalles de tu auto") }
 @Composable fun PantallaComprados() { Text("Artículos comprados") }
 @Composable fun PantallaEntrega() { Text("En camino para entrega") }
+
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
