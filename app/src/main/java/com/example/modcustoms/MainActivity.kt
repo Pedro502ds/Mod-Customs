@@ -216,7 +216,12 @@ fun PantallaPrincipal() {
             }
             composable(Screen.Perfil.route) { PantallaPerfil() }
             composable(Screen.TuAuto.route) { PantallaTuAuto() }
-            composable(Screen.Comprados.route) { PantallaComprados(carritoViewModel) }
+            composable(Screen.Comprados.route) {
+                PantallaComprados(
+                    viewModel = carritoViewModel,
+                    navController = internalNavController
+                )
+            }
             composable(Screen.Entrega.route) { PantallaEntrega() }
 
             composable(
@@ -765,7 +770,7 @@ fun PantallaTuAuto() {
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Especificaciones técnicas
+
                     Text(
                         text = "Especificaciones Técnicas",
                         style = MaterialTheme.typography.titleLarge,
@@ -798,7 +803,6 @@ fun PantallaTuAuto() {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Características adicionales
                     Text(
                         text = "Características",
                         style = MaterialTheme.typography.titleLarge,
@@ -817,7 +821,7 @@ fun PantallaTuAuto() {
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
-                        onClick = { /* Acción para más detalles */ },
+                        onClick = { },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Ver Historial de Mantenimiento")
@@ -885,9 +889,14 @@ fun CaracteristicaItem(nombre: String, valor: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaComprados(viewModel: CarritoViewModel = viewModel()) {
+fun PantallaComprados(
+    viewModel: CarritoViewModel,
+    navController: NavHostController
+) {
     val items = viewModel.items
     val total = viewModel.total.value
+    var mostrarPago by remember { mutableStateOf(false) }
+
 
     Scaffold(
         topBar = {
@@ -951,7 +960,7 @@ fun PantallaComprados(viewModel: CarritoViewModel = viewModel()) {
                             }
                             Spacer(Modifier.height(16.dp))
                             Button(
-                                onClick = {  },
+                                onClick = { mostrarPago = true },
                                 modifier = Modifier.fillMaxWidth().height(50.dp)
                             ) {
                                 Text("PROCEDER AL PAGO", fontSize = 18.sp)
@@ -967,11 +976,102 @@ fun PantallaComprados(viewModel: CarritoViewModel = viewModel()) {
                     }
                 }
             }
-
         }
+    }
+    if (mostrarPago) {
+        DialogoPago(
+            total = total,
+            productos = items,
+            onPagoExitoso = {
+                mostrarPago = false
+                navController.navigate(Screen.Entrega.route)
+            },
+            onCancelar = { mostrarPago = false },
+            viewModel = viewModel
+        )
     }
 }
 
+@Composable
+fun DialogoPago(
+    total: Int,
+    productos: List<Producto>,
+    onPagoExitoso: () -> Unit,
+    onCancelar: () -> Unit,
+    viewModel: CarritoViewModel
+) {
+    var numeroTarjeta by remember { mutableStateOf("") }
+    var fechaVencimiento by remember { mutableStateOf("") }
+    var cvv by remember { mutableStateOf("") }
+    var nombreTitular by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        title = { Text("Pago con Tarjeta") },
+        text = {
+            Column {
+                Text("Total a pagar: ${formatearPrecio(total)}",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp))
+
+                TextField(
+                    value = numeroTarjeta,
+                    onValueChange = { numeroTarjeta = it },
+                    label = { Text("Número de Tarjeta") },
+                    placeholder = { Text("1234 5678 9012 3456") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(Modifier.fillMaxWidth()) {
+                    TextField(
+                        value = fechaVencimiento,
+                        onValueChange = { fechaVencimiento = it },
+                        label = { Text("MM/AA") },
+                        placeholder = { Text("12/25") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextField(
+                        value = cvv,
+                        onValueChange = { cvv = it },
+                        label = { Text("CVV") },
+                        placeholder = { Text("123") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextField(
+                    value = nombreTitular,
+                    onValueChange = { nombreTitular = it },
+                    label = { Text("Nombre del Titular") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (numeroTarjeta.isNotBlank() && fechaVencimiento.isNotBlank() &&
+                        cvv.isNotBlank() && nombreTitular.isNotBlank()) {
+                        viewModel.clearCarrito()
+                        onPagoExitoso()
+                    }
+                },
+                enabled = numeroTarjeta.isNotBlank() && fechaVencimiento.isNotBlank() &&
+                        cvv.isNotBlank() && nombreTitular.isNotBlank()
+            ) {
+                Text("Pagar ${formatearPrecio(total)}")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
 fun formatearPrecio(total: Int): String {
     if (total == 0) return "$0"
 
@@ -986,8 +1086,66 @@ fun formatearPrecio(total: Int): String {
     }
 }
 
-@Composable fun PantallaEntrega() { Text("En camino para entrega") }
+@Composable
+fun PantallaEntrega() {
 
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            Icon(
+                Icons.Default.LocalShipping,
+                contentDescription = "En camino",
+                modifier = Modifier.size(100.dp),
+                tint = Color(0xFF00A000)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "¡Pedido Confirmado!",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Tu pedido está en camino",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                "Todos tus productos han sido procesados",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                "• Kit Turbo Garrett GT35",
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            Text(
+                "• Escape Deportivo",
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            Text(
+                "• Y otros productos...",
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                "Gracias por tu compra en MOD CUSTOMS",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable

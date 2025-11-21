@@ -23,7 +23,7 @@ object UsuarioRepository {
                 marca = "Chevrolet",
                 modelo = "Camaro SS",
                 año = "2025",
-                color = "Rojo",
+                color = "Negro",
                 placa = "ABC123"
             ),
             fotoPerfil = null
