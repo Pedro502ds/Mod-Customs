@@ -106,7 +106,11 @@ import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
-
+//-----------------------------------------------------------------------------------------------------------------------------
+// @Author : Pedro Manuel Romero Romero
+// @Descripcion: En este proyecto esta mi app para customizar autos
+// 00
+//-----------------------------------------------------------------------------------------------------------------------------
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
